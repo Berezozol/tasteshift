@@ -1,0 +1,45 @@
+name: Stack
+# Boots the Compose stack (database, migrations, API, client) without provider
+# keys and checks it end to end.
+on:
+  push:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "compose.yaml"
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".github/workflows/stack.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "compose.yaml"
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".github/workflows/stack.yml"
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose --profile app up -d --build --wait --wait-timeout 300
+      - uses: astral-sh/setup-uv@v6
+      - name: API smoke checks
+        working-directory: backend
+        run: |
+          uv sync --frozen --python 3.12
+          uv run python scripts/smoke.py http://127.0.0.1:8000
+      - name: Client and proxy
+        run: |
+          curl -fsS http://127.0.0.1:4173/ | grep -q '<div id="root">'
+          curl -fsS http://127.0.0.1:4173/api/health | grep -q '"status":"ok"'
+      - name: Container logs
+        if: failure()
+        run: docker compose --profile app logs --no-color
+      - run: docker compose --profile app down -v
+        if: always()

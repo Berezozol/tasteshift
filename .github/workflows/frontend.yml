@@ -1,5 +1,13 @@
 name: Frontend
-on: [push, pull_request]
+on:
+  push:
+    paths: ["frontend/**", ".github/workflows/frontend.yml"]
+  pull_request:
+    paths: ["frontend/**", ".github/workflows/frontend.yml"]
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -15,7 +23,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
-      - run: npm test
+      - run: npm run test:coverage
       - run: npm run format:check
       - run: npm run build
       - run: npm run test:sites
