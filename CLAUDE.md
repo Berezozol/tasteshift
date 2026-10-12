@@ -28,7 +28,7 @@ Frontend, from `frontend/`: `npm ci`, `npm run typecheck`, `npm test`, `npm run 
 ## Machine gotchas
 
 - Smart App Control blocks unsigned executables: uv's standalone CPython and venv console-script shims (`pytest.exe`, `uvicorn.exe`, `alembic.exe`). Use the signed python.org interpreter above and invoke tools as `python -m <tool>`.
-- `core.autocrlf=true`: `npm run format:check` reports CRLF-only diffs locally; verify with `npx prettier --check --end-of-line auto src vite.config.mjs`. CI (Linux) is authoritative.
+- Line endings: `.gitattributes` (`eol=lf`) keeps LF in every checkout, overriding the system Git `core.autocrlf=true`. Write new files with LF.
 - README shell snippets are bash; in PowerShell set env vars as `$env:RUN_QLOO_LIVE="1"; ...`.
 
 ## Rules
