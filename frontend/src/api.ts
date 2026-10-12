@@ -13,7 +13,6 @@ export function errorMessage(code: string): string {
       "The experience planner is unavailable. Try without an intention.",
     agent_rate_limit:
       "The planner has reached its limit. Try without an intention, or come back later.",
-    agent_busy: "The planner is busy. Please try again in a moment.",
     storage_unavailable: "Your session could not be saved. Please try again.",
     timeout: "This is taking longer than expected. Please try again.",
     network:

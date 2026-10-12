@@ -7,6 +7,7 @@ dependencies = [
   "fastapi>=0.115,<1",
   "uvicorn>=0.30,<1",
   "httpx>=0.27,<1",
+  "httpx2>=2.13,<3",
   "pydantic-settings>=2.6,<3",
   "sqlalchemy[asyncio]>=2.0,<2.1",
   "asyncpg>=0.30,<1",
@@ -24,6 +25,9 @@ build-backend = "hatchling.build"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+  "smoke: fast end-to-end health checks of the API with synthetic providers",
+]
 
 [tool.ruff]
 target-version = "py312"

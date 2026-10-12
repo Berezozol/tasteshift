@@ -1,11 +1,15 @@
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, SecretStr, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# backend/.env, independent of the directory uvicorn or alembic is started from.
+ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=ENV_FILE, extra="ignore")
 
     qloo_api_key: SecretStr | None = None
     qloo_base_url: Literal["https://hackathon.api.qloo.com"] = "https://hackathon.api.qloo.com"

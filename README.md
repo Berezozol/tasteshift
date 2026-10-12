@@ -26,7 +26,7 @@ Create `backend/.env` using the variable names in `.env.example`. Add your Qloo 
 
 ```sh
 uv run alembic upgrade head
-uv run uvicorn tasteshift.main:app --host 127.0.0.1 --port 8000
+uv run uvicorn --factory tasteshift.main:create_app --host 127.0.0.1 --port 8000
 ```
 
 Open `http://localhost:8000/docs` for the interactive API. `/api/health` checks the process and `/api/ready` checks the database and initial schema. Search returns `provider_not_configured` until a key is supplied.

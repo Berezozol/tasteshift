@@ -67,8 +67,11 @@ class DiscoveryService:
         try:
             async with asyncio.timeout_at(deadline):
                 seeds = await provider.entities(signal_ids)
-                if {e.id for e in seeds} != set(signal_ids):
+                resolved = {e.id for e in seeds}
+                if not resolved <= set(signal_ids) or not set(body.seed_ids) <= resolved:
                     raise UnresolvedInterests
+                # A saved item the provider no longer resolves is dropped, not fatal.
+                signal_ids = [id for id in signal_ids if id in resolved]
                 calls = [provider.candidates(signal_ids, c, excluded) for c in categories]
                 needs_profile = not any(seed.tags for seed in seeds)
                 if needs_profile:
@@ -158,8 +161,7 @@ class DiscoveryService:
 
 
 def feedback_signals(body: DiscoveryRequest, feedback) -> tuple[set[UUID], list[UUID]]:
-    excluded = set(body.seed_ids) | {
-        UUID(item.entity_id) for item in feedback if item.action != "save"
-    }
+    # Saved items stay positive signals but are never recommended again.
+    excluded = set(body.seed_ids) | {UUID(item.entity_id) for item in feedback}
     positives = [UUID(item.entity_id) for item in feedback if item.action == "save"]
     return excluded, positives

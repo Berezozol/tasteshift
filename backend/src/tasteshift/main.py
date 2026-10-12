@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi.responses import JSONResponse
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -58,15 +59,11 @@ def create_app(settings: Settings | None = None, transport=None, *, agent_model=
 
     @app.exception_handler(ProviderError)
     async def provider_error(request, exc):
-        from fastapi.responses import JSONResponse
-
         status = 429 if exc.code == "agent_rate_limit" else 503
         return JSONResponse(status_code=status, content={"detail": {"code": exc.code}})
 
     @app.exception_handler(SQLAlchemyError)
     async def database_error(request, exc):
-        from fastapi.responses import JSONResponse
-
         return JSONResponse(status_code=503, content={"detail": {"code": "storage_unavailable"}})
 
     async def get_session(request: Request, response: Response, *, create=False) -> str:
@@ -267,6 +264,3 @@ def create_app(settings: Settings | None = None, transport=None, *, agent_model=
         return {"status": "saved"}
 
     return app
-
-
-app = create_app()

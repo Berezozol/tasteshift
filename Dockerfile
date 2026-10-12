@@ -11,4 +11,4 @@ RUN uv sync --frozen --no-dev
 RUN useradd --create-home appuser
 USER appuser
 EXPOSE 8000
-CMD ["/app/.venv/bin/uvicorn", "tasteshift.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/app/.venv/bin/uvicorn", "--factory", "tasteshift.main:create_app", "--host", "0.0.0.0", "--port", "8000"]
