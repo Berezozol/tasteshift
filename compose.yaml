@@ -1,3 +1,7 @@
+# `docker compose up -d --wait` starts only PostgreSQL for local development.
+# `docker compose --profile app up -d --wait` adds migrations, the API and the
+# Vite client on http://localhost:4173. Provider keys come from backend/.env.
+name: tasteshift-dev
 services:
   db:
     image: postgres:16-alpine
@@ -14,5 +18,65 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  migrate:
+    profiles: [app]
+    image: tasteshift-backend:dev
+    build: .
+    command: ["/app/.venv/bin/alembic", "upgrade", "head"]
+    environment: &backend-env
+      DATABASE_URL: postgresql+asyncpg://tasteshift:tasteshift@db:5432/tasteshift
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    profiles: [app]
+    image: tasteshift-backend:dev
+    build: .
+    env_file:
+      - path: backend/.env
+        required: false
+    environment: *backend-env
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - /app/.venv/bin/python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/ready')"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    profiles: [app]
+    image: node:22-alpine
+    working_dir: /app
+    command: ["sh", "-c", "npm ci && npm run dev -- --host 0.0.0.0 --port 4173 --strictPort"]
+    environment:
+      DEV_API_TARGET: http://backend:8000
+      # Bind-mounted sources on Windows/macOS do not deliver file events.
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./frontend:/app
+      # Linux node_modules stay in the container, separate from the host's.
+      - frontend_modules:/app/node_modules
+    ports:
+      - "127.0.0.1:4173:4173"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:4173/"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
 volumes:
   tasteshift_db:
+  frontend_modules:

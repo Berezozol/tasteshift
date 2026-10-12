@@ -12,18 +12,13 @@ Cross-category discovery: FastAPI + PostgreSQL backend grounded in Qloo, optiona
 
 ## Commands (Windows, PowerShell)
 
-Backend, from `backend/`:
+`just` (repo root) wraps everything: `just setup | db | up | down | migrate | api | web | lint | fmt | test | smoke [url]`. Recipes run in PowerShell and set `UV_PYTHON_PREFERENCE=system`.
 
-```powershell
-uv sync --frozen --python "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe"
-uv run ruff check . ; uv run ruff format --check .
-uv run python -m pytest -q -W error          # full suite (live tests skip)
-uv run python -m pytest -m smoke -q
-uv run alembic upgrade head                  # needs Postgres (docker compose -p tasteshift-dev up -d --wait)
-uv run python -m uvicorn --factory tasteshift.main:create_app --host 127.0.0.1 --port 8000
-```
-
-Frontend, from `frontend/`: `npm ci`, `npm run typecheck`, `npm test`, `npm run test:smoke`, `npm run dev -- --port 4173 --strictPort`.
+- Full stack in Docker: `docker compose --profile app up -d --build --wait` (db, migrate, backend :8000, frontend :4173; keys from `backend/.env`). Plain `docker compose up -d --wait db` starts only PostgreSQL. Compose project name is `tasteshift-dev`.
+- Backend, from `backend/`: `uv sync --frozen --python 3.12`, `uv run ruff check .`, `uv run ruff format --check .`, `uv run python -m pytest -q -W error [--cov]`, `uv run python -m pytest -m smoke -q`, `uv run python -m alembic upgrade head`, `uv run python -m uvicorn --factory tasteshift.main:create_app --host 127.0.0.1 --port 8000`, `uv run python scripts/smoke.py http://127.0.0.1:8000`.
+- Frontend, from `frontend/`: `npm ci`, `npm run typecheck`, `npm test`, `npm run test:coverage`, `npm run test:smoke`, `npm run format:check`, `npm run dev -- --port 4173 --strictPort`.
+- Env template: `backend/.env.example` → `backend/.env`.
+- CI: `backend.yml`, `frontend.yml`, `agent-spike.yml` and `stack.yml` (Compose boot + smoke) run on path-filtered push/PR and `workflow_dispatch`.
 
 ## Machine gotchas
 

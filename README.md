@@ -14,24 +14,33 @@ Test provider responses are synthetic and used only in tests. Runtime never sile
 
 ## Local setup
 
-Requires Python 3.12, uv and Docker Desktop. Run these commands from the repository root:
+Copy `backend/.env.example` to `backend/.env`. Add your Qloo hackathon key and, optionally, a Gemini key. Never commit real keys. Development database credentials in Compose are local-only defaults.
+
+### Everything in Docker
+
+Requires Docker Desktop only:
 
 ```sh
-docker compose -p tasteshift-dev up -d --wait
-cd backend
-uv sync --frozen --python 3.12
+docker compose --profile app up -d --build --wait
 ```
 
-Create `backend/.env` using the variable names in `.env.example`. Add your Qloo hackathon key and, optionally, a Gemini key. Never commit real keys. Development database credentials in Compose are local-only defaults.
+This starts PostgreSQL, applies migrations, and serves the API on `http://localhost:8000` and the interface on `http://localhost:4173`. Stop it with `docker compose --profile app down`; data stays in the `tasteshift_db` volume.
+
+### On the host
+
+Requires Python 3.12, [uv](https://docs.astral.sh/uv/), Node 22 LTS or newer, and Docker Desktop for PostgreSQL. [just](https://just.systems) wraps the commands below (`just` lists them; `just setup`, `just db`, `just migrate`, `just api`, `just web`, `just test`, `just lint`, `just smoke`).
 
 ```sh
-uv run alembic upgrade head
-uv run uvicorn --factory tasteshift.main:create_app --host 127.0.0.1 --port 8000
+docker compose up -d --wait db
+cd backend
+uv sync --frozen --python 3.12
+uv run python -m alembic upgrade head
+uv run python -m uvicorn --factory tasteshift.main:create_app --host 127.0.0.1 --port 8000
 ```
 
 Open `http://localhost:8000/docs` for the interactive API. `/api/health` checks the process and `/api/ready` checks the database and initial schema. Search returns `provider_not_configured` until a key is supplied.
 
-In another terminal, start the interface (Node 22 LTS or newer):
+In another terminal, start the interface:
 
 ```sh
 cd frontend
@@ -40,6 +49,8 @@ npm run dev -- --port 4173 --strictPort
 ```
 
 Open `http://127.0.0.1:4173`. The local Vite proxy connects relative `/api` requests to FastAPI. Provider keys stay on the server; the initial preview makes no model or Qloo calls. Select **Make it yours** to search and build a live system.
+
+On Windows, shell examples in this README use bash syntax; in PowerShell set variables as `$env:NAME="value"; command`. If Smart App Control blocks uv's downloaded Python or the venv launchers (`pytest.exe`, `uvicorn.exe`), install Python 3.12 from python.org and keep the `python -m` form shown above.
 
 ## API
 
@@ -81,7 +92,7 @@ This calls real Qloo search and cross-category Insights. It is skipped during re
 
 ## Agent mode
 
-The model adapter uses Gemini Developer API with `gemini-3.5-flash-lite` by default. Create a key in [Google AI Studio](https://aistudio.google.com/apikey) using a **Free Tier project without billing**, then add `GEMINI_API_KEY` to `backend/.env`. `MODEL_NAME` is optional; its default is also shown in `.env.example`. An old `MODEL_API_KEY` does not enable the agent and is not reused as a Gemini key.
+The model adapter uses Gemini Developer API with `gemini-3.5-flash-lite` by default. Create a key in [Google AI Studio](https://aistudio.google.com/apikey) using a **Free Tier project without billing**, then add `GEMINI_API_KEY` to `backend/.env`. `MODEL_NAME` is optional; its default is also shown in `backend/.env.example`. An old `MODEL_API_KEY` does not enable the agent and is not reused as a Gemini key.
 
 This model currently has a [free API tier](https://ai.google.dev/gemini-api/docs/pricing), subject to project quotas. Code cannot detect your billing tier or prevent charges on an already billed Google project. There is no fallback to OpenAI, Vertex AI or another model, and automatic SDK retries are disabled. Free-tier inputs may be used to improve Google's products; do not send sensitive information. See [Gemini setup](docs/gemini-setup.md). `/api/health` reports configuration, not whether credentials or quota work.
 
