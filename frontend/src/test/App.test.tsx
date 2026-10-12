@@ -77,6 +77,22 @@ describe("orbital discovery", () => {
     );
     expect(tagLabel("Independent cinema")).toBe("Independent cinema");
   });
+  it("returns focus to search after adding an interest", async () => {
+    render(<App />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /Make it yours/ }));
+    const input = screen.getByRole("textbox", {
+      name: "Search your interests",
+    });
+    await user.type(input, favourites[0].name);
+    await user.click(
+      await screen.findByRole("button", {
+        name: `${favourites[0].name} Music`,
+      }),
+    );
+    expect(input).toHaveFocus();
+    expect(input).toHaveValue("");
+  });
   it("labels the sample system and makes no provider calls on load", () => {
     render(<App />);
     expect(screen.getByText("Preview · sample system")).toBeVisible();

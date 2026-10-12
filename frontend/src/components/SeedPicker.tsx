@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -35,6 +35,7 @@ export function SeedPicker({
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState("");
   const [intention, setIntention] = useState(initialIntention);
+  const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const controller = new AbortController();
     setResults([]);
@@ -107,6 +108,7 @@ export function SeedPicker({
       <label className="search-field">
         <MagnifyingGlass size={20} />
         <input
+          ref={inputRef}
           autoFocus
           maxLength={120}
           value={query}
@@ -133,6 +135,8 @@ export function SeedPicker({
                 onClick={() => {
                   setSeeds([...seeds, entity]);
                   setQuery("");
+                  // Keep typing the next interest without reaching for the mouse.
+                  inputRef.current?.focus();
                 }}
               >
                 <span>
